@@ -4,7 +4,7 @@ import os
 import unittest
 from unittest.mock import patch
 
-from app.main import summarize
+from app.main import post_to_discord, summarize
 
 
 ARTICLE = {
@@ -35,3 +35,15 @@ class SummarizeTests(unittest.TestCase):
         self.assertEqual(digest["overview"], "概要")
         self.assertEqual(digest["items"], [{**ARTICLE, "summary": "要約"}])
 
+
+class DiscordTests(unittest.TestCase):
+    @patch("app.main.request_json")
+    def test_posts_with_user_agent(self, request_json):
+        with patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": "https://discord.com/api/webhooks/1/token"}, clear=True):
+            post_to_discord({"content": "test"})
+
+        request_json.assert_called_once_with(
+            "https://discord.com/api/webhooks/1/token?wait=true",
+            {"content": "test"},
+            {"User-Agent": "web-tech-daily-discord/0.1 (+https://github.com/rie03p/web-tech-daily-discord)"},
+        )

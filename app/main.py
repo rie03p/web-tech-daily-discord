@@ -119,7 +119,11 @@ def post_to_discord(payload: dict) -> None:
     webhook_url = os.environ.get("DISCORD_WEBHOOK_URL")
     if not webhook_url:
         raise RuntimeError("DISCORD_WEBHOOK_URL is required (use --dry-run to inspect without posting)")
-    request_json(f"{webhook_url}{'&' if '?' in webhook_url else '?'}wait=true", payload, {})
+    request_json(
+        f"{webhook_url}{'&' if '?' in webhook_url else '?'}wait=true",
+        payload,
+        {"User-Agent": "web-tech-daily-discord/0.1 (+https://github.com/rie03p/web-tech-daily-discord)"},
+    )
 
 
 def main() -> None:
