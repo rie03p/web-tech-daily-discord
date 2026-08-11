@@ -54,6 +54,20 @@ def request_json(url: str, payload: dict, headers: dict[str, str]) -> dict:
         raise RuntimeError(f"HTTP {error.code} from {url}: {detail}") from error
 
 
+def response_output_text(body: dict) -> str:
+    """Extract text from a raw Responses API response."""
+    parts = [
+        content["text"]
+        for item in body["output"]
+        if item.get("type") == "message"
+        for content in item.get("content", [])
+        if content.get("type") == "output_text" and isinstance(content.get("text"), str)
+    ]
+    if not parts:
+        raise KeyError("output_text")
+    return "".join(parts)
+
+
 def summarize(articles: list[dict]) -> dict:
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key or not articles:
@@ -72,7 +86,7 @@ def summarize(articles: list[dict]) -> dict:
         "store": False,
     }, {"Authorization": f"Bearer {api_key}"})
     try:
-        text = body["output_text"]
+        text = response_output_text(body)
         start, end = text.index("{"), text.rindex("}") + 1
         result = json.loads(text[start:end])
     except (KeyError, ValueError, json.JSONDecodeError) as error:
