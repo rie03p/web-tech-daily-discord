@@ -51,7 +51,7 @@ python -m app.main
 | `DISCORD_WEBHOOK_URL` | はい | Discord Incoming Webhook URL |
 | `OPENAI_API_KEY` | いいえ | OpenAI API key |
 
-`.github/workflows/daily.yml` は毎日08:00 JST（23:00 UTC）に実行します。手動実行（`workflow_dispatch`）にも対応します。送信済みURLをGitへ記録するため、Actionsには `contents: write` 権限が必要です。
+`.github/workflows/daily.yml` は毎週月曜08:00 JST（日曜23:00 UTC）に、直近7日分を集計して実行します。手動実行（`workflow_dispatch`）にも対応します。送信済みURLをGitへ記録するため、Actionsには `contents: write` 権限が必要です。
 
 ## 保守の方針
 

@@ -2,8 +2,8 @@ name: Send daily web-tech digest
 
 on:
   schedule:
-    # 08:00 JST (UTC+9). GitHub ActionsのcronはUTCです。
-    - cron: '0 23 * * *'
+    # Every Monday at 08:00 JST (23:00 UTC on Sunday). GitHub ActionsのcronはUTCです。
+    - cron: '0 23 * * 0'
   workflow_dispatch:
     inputs:
       date:
@@ -26,7 +26,7 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: gpt-5.6-luna
-        run: python -m app.main ${{ inputs.date && format('--date={0}', inputs.date) || '' }}
+        run: python -m app.main --days 7 ${{ inputs.date && format('--date={0}', inputs.date) || '' }}
       - name: Persist sent URLs
         run: |
           git config user.name github-actions[bot]

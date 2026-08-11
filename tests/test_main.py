@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import os
 import unittest
+from datetime import date
 from unittest.mock import patch
 
-from app.main import post_to_discord, summarize
+from app.main import articles_for_period, discord_payload, limit_per_source, post_to_discord, summarize
 
 
 ARTICLE = {
@@ -47,3 +48,35 @@ class DiscordTests(unittest.TestCase):
             {"content": "test"},
             {"User-Agent": "web-tech-daily-discord/0.1 (+https://github.com/rie03p/web-tech-daily-discord)"},
         )
+
+    def test_groups_items_by_source(self):
+        payload = discord_payload({"overview": "概要", "items": [
+            {**ARTICLE, "summary": "1件目"},
+            {**ARTICLE, "title": "Another update", "url": "https://example.com/another", "summary": "2件目"},
+        ]}, date(2026, 8, 5), date(2026, 8, 11))
+
+        embed = payload["embeds"][0]
+        self.assertEqual(embed["title"], "Web Tech Daily — 2026-08-05 – 2026-08-11 (JST)")
+        self.assertEqual(embed["fields"][0]["name"], "Example（2件）")
+        self.assertIn("1件目", embed["fields"][0]["value"])
+        self.assertIn("2件目", embed["fields"][0]["value"])
+
+
+class DigestSelectionTests(unittest.TestCase):
+    def test_limits_each_source_to_two_items(self):
+        articles = [
+            {**ARTICLE, "title": f"AWS {number}", "source": "AWS"}
+            for number in range(3)
+        ] + [{**ARTICLE, "title": "React", "source": "React"}]
+
+        self.assertEqual([article["title"] for article in limit_per_source(articles)], ["AWS 0", "AWS 1", "React"])
+
+    def test_selects_articles_in_requested_period(self):
+        articles = [
+            {**ARTICLE, "title": "Included", "published_at": "2026-08-05T00:00:00+09:00"},
+            {**ARTICLE, "title": "Excluded", "published_at": "2026-08-04T23:59:59+09:00"},
+        ]
+
+        selected = articles_for_period(articles, date(2026, 8, 11), 7)
+
+        self.assertEqual([article["title"] for article in selected], ["Included"])
