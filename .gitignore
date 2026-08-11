@@ -1,0 +1,6 @@
+.env
+data/state.json
+data/*.tmp
+coverage/
+__pycache__/
+.pytest_cache/
