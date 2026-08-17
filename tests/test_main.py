@@ -5,7 +5,7 @@ import unittest
 from datetime import date
 from unittest.mock import patch
 
-from app.main import articles_for_period, discord_payload, limit_per_source, post_to_discord, summarize
+from app.main import articles_for_period, discord_payload, post_to_discord, summarize
 
 
 ARTICLE = {
@@ -63,13 +63,13 @@ class DiscordTests(unittest.TestCase):
 
 
 class DigestSelectionTests(unittest.TestCase):
-    def test_limits_each_source_to_two_items(self):
+    def test_fallback_keeps_up_to_ten_items_regardless_of_source(self):
         articles = [
             {**ARTICLE, "title": f"AWS {number}", "source": "AWS"}
-            for number in range(3)
-        ] + [{**ARTICLE, "title": "React", "source": "React"}]
+            for number in range(11)
+        ]
 
-        self.assertEqual([article["title"] for article in limit_per_source(articles)], ["AWS 0", "AWS 1", "React"])
+        self.assertEqual([article["title"] for article in summarize(articles)["items"]], [f"AWS {number}" for number in range(10)])
 
     def test_selects_articles_in_requested_period(self):
         articles = [

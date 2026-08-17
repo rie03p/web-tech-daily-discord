@@ -40,7 +40,7 @@ def save_state(state: dict) -> None:
 def fallback_digest(articles: list[dict]) -> dict:
     return {
         "overview": f"{len(articles)}件の公式アップデートを収集しました。",
-        "items": [{**article, "summary": (article["description"] or "詳細は一次ソースをご確認ください。")[:280]} for article in limit_per_source(articles)],
+        "items": [{**article, "summary": (article["description"] or "詳細は一次ソースをご確認ください。")[:280]} for article in articles[:10]],
     }
 
 
@@ -68,19 +68,6 @@ def response_output_text(body: dict) -> str:
     return "".join(parts)
 
 
-def limit_per_source(articles: list[dict], per_source: int = 2, total: int = 10) -> list[dict]:
-    selected, counts = [], {}
-    for article in articles:
-        source = article["source"]
-        if counts.get(source, 0) >= per_source:
-            continue
-        selected.append(article)
-        counts[source] = counts.get(source, 0) + 1
-        if len(selected) == total:
-            break
-    return selected
-
-
 def articles_for_period(articles: list[dict], end_date: date, days: int) -> list[dict]:
     start_date = end_date - timedelta(days=days - 1)
     return [
@@ -94,7 +81,7 @@ def summarize(articles: list[dict]) -> dict:
     if not api_key or not articles:
         return fallback_digest(articles)
     candidates = [{key: article[key] for key in ("source", "title", "url", "topics")} | {"description": article["description"][:900]} for article in articles[:40]]
-    prompt = """あなたはWeb系企業の技術ニュース編集者です。以下の公式アップデート候補から、実務で追う価値が高い最大10件を選び、日本語で要約してください。同じsourceからは最大2件までにしてください。破壊的変更、セキュリティ、料金、GA、主要な機能追加、重要な非推奨を優先します。URLは入力のものをそのまま使用し、推測や外部情報を加えません。
+    prompt = """あなたはWeb系企業の技術ニュース編集者です。以下の公式アップデート候補から、情報源ごとの件数ではなく重要度だけで、実務で追う価値が高い最大10件を選び、日本語で要約してください。破壊的変更、セキュリティ、料金、GA、主要な機能追加、重要な非推奨を優先します。URLは入力のものをそのまま使用し、推測や外部情報を加えません。
 
 厳密に次のJSONだけを返してください: {"overview":"全体を一文で","items":[{"url":"入力URL","summary":"何が変わったか。なぜ重要か（120文字以内）"}]}
 
@@ -119,7 +106,6 @@ def summarize(articles: list[dict]) -> dict:
         summary = item.get("summary")
         if article and isinstance(summary, str):
             selected.append({**article, "summary": summary[:700]})
-    selected = limit_per_source(selected)
     return {"overview": str(result.get("overview", "")), "items": selected} if selected else fallback_digest(articles)
 
 
